@@ -1,0 +1,137 @@
+{% extends "layout.html" %}
+{% block content %}
+<style>
+    .preview-container { background: #fff; border-radius: 12px; padding: 20px; margin-bottom: 2rem; border: 1px solid #e0e0e0; }
+    .preview-window { height: 200px; border-radius: 8px; background: #f8f9fa; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; border: 2px solid #dee2e6; transition: 0.3s; }
+    .active-id { border-color: #3498db; box-shadow: 0 0 15px rgba(52, 152, 219, 0.2); }
+    .active-cx { border-color: #e67e22; box-shadow: 0 0 15px rgba(230, 126, 34, 0.2); }
+    .metric-card { background: #f1f3f5; border-radius: 6px; padding: 10px; margin-bottom: 10px; font-size: 0.85rem; }
+    .metric-val { font-weight: bold; color: #2c3e50; float: right; }
+    .status-dot { height: 10px; width: 10px; background-color: #bbb; border-radius: 50%; display: inline-block; margin-right: 5px; }
+    .dot-active { background-color: #2ecc71; animation: blink 1s infinite; }
+    @keyframes blink { 50% { opacity: 0.5; } }
+</style>
+
+<div class="hero-section text-center rounded mb-4">
+    <h1>Consist-Gen Control Center</h1>
+    <p>Identity Injection (IIA) & Context Transition Scoring (CTS)</p>
+</div>
+
+<div class="preview-container shadow-sm">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0"><i class="fas fa-project-diagram me-2"></i>Reference Context Flow (RCF)</h5>
+        <span id="pipeline-status" class="badge bg-secondary">STANDBY</span>
+    </div>
+    
+    <div class="row text-center align-items-center">
+        <div class="col-md-5">
+            <div id="id-window" class="preview-window">
+                <i class="fas fa-id-card-alt fa-3x mb-2 text-primary"></i>
+                <div class="small fw-bold">IDENTITY (ID)</div>
+                <div id="id-meta" class="text-muted" style="font-size: 0.7rem;">Waiting for Embeddings...</div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <i id="flow-icon" class="fas fa-exchange-alt fa-2x text-muted"></i>
+        </div>
+        <div class="col-md-5">
+            <div id="cx-window" class="preview-window">
+                <i class="fas fa-adjust fa-3x mb-2 text-warning"></i>
+                <div class="small fw-bold">CONTEXT (CX)</div>
+                <div id="cx-meta" class="text-muted" style="font-size: 0.7rem;">Awaiting Environment Map...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-4">
+        <div class="card p-4 h-100">
+            <h6><i class="fas fa-sliders-h me-2"></i>Live Parameters</h6>
+            <hr>
+            <div class="metric-card">
+                <span>ID Embedding Vector</span>
+                <span class="metric-val" id="val-id">0.000</span>
+            </div>
+            <div class="metric-card">
+                <span>Latent Space Depth</span>
+                <span class="metric-val">512-dim</span>
+            </div>
+            <div class="metric-card">
+                <span>Background Mask (M)</span>
+                <span class="metric-val" id="val-mask">Inactive</span>
+            </div>
+            <div class="metric-card">
+                <span>CTS Threshold</span>
+                <span class="metric-val">0.850</span>
+            </div>
+            
+            <button id="genBtn" class="btn btn-primary w-100 mt-3" onclick="startSim()">
+                Generate Huge Dataset
+            </button>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <div class="card p-4 h-100">
+            <div class="d-flex justify-content-between">
+                <h6><i class="fas fa-terminal me-2"></i>Algorithm Feed</h6>
+                <div class="small"><span id="live-dot" class="status-dot"></span>Simulation Active</div>
+            </div>
+            <div id="log-container" style="height: 250px; overflow-y: auto; background: #1a1d20; color: #00ff00; padding: 15px; font-family: monospace; font-size: 0.8rem; border-radius: 6px; margin-top: 10px;">
+                <div class="text-muted">> System ready for simulation...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const logs = document.getElementById('log-container');
+const btn = document.getElementById('genBtn');
+
+function addLog(msg, color="#00ff00") {
+    logs.innerHTML += `<div style="color: ${color}">[${new Date().toLocaleTimeString().split(' ')[0]}] ${msg}</div>`;
+    logs.scrollTop = logs.scrollHeight;
+}
+
+function startSim() {
+    btn.disabled = true;
+    document.getElementById('live-dot').classList.add('dot-active');
+    document.getElementById('pipeline-status').className = "badge bg-warning text-dark";
+    document.getElementById('pipeline-status').innerText = "RUNNING IIA/CTS";
+
+    // Phase 1: Identity Extraction
+    addLog("IIA: Extracting Identity Embeddings (RCF)...", "#3498db");
+    document.getElementById('id-window').classList.add('active-id');
+    document.getElementById('val-id').innerText = (Math.random() * 0.9).toFixed(3);
+    document.getElementById('id-meta').innerText = "Reference: Frame_001.ext";
+
+    setTimeout(() => {
+        // Phase 2: Background Decoupling
+        addLog("CX: Initializing Dynamic Background Decoupling...", "#f1c40f");
+        document.getElementById('cx-window').classList.add('active-cx');
+        document.getElementById('val-mask').innerText = "Active (Softened)";
+        document.getElementById('flow-icon').className = "fas fa-exchange-alt fa-2x text-success";
+    }, 1200);
+
+    setTimeout(() => {
+        // Phase 3: Transition Scoring
+        const score = (0.88 + Math.random() * 0.1).toFixed(3);
+        addLog(`CTS: Scoring Transition Consistency... Result: ${score}`, "#2ecc71");
+        document.getElementById('cx-meta').innerText = `Sim Score: ${score}`;
+    }, 2500);
+
+    setTimeout(() => {
+        // Phase 4: Data Finalization
+        fetch('/generate_dataset', { method: 'POST' })
+        .then(() => {
+            addLog(">>> SUCCESS: 1000 Simulated Records Generated.", "#fff");
+            btn.disabled = false;
+            document.getElementById('live-dot').classList.remove('dot-active');
+            document.getElementById('pipeline-status').className = "badge bg-success";
+            document.getElementById('pipeline-status').innerText = "COMPLETED";
+        });
+    }, 3500);
+}
+</script>
+{% endblock %}

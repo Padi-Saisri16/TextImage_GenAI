@@ -1,0 +1,235 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold text-dark">Consist-Gen: System Analytics</h2>
+        <p class="text-muted">Stability analysis of Identity (ID) vs. Context (CX) transitions.</p>
+    </div>
+    <div class="btn-group">
+        <button class="btn btn-outline-primary btn-sm" onclick="location.reload()">
+            <i class="fas fa-sync-alt me-2"></i>Refresh Data
+        </button>
+        <button class="btn btn-dark btn-sm" onclick="window.print()">
+            <i class="fas fa-file-export me-2"></i>Export Report
+        </button>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm p-3 border-start border-primary border-4">
+            <small class="text-muted fw-bold">AVG. IDENTITY RETENTION</small>
+            <h3 class="mb-0" id="stat-retention">0.00%</h3>
+            <div class="small text-success"><i class="fas fa-caret-up"></i> IIA Optimized</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm p-3 border-start border-warning border-4">
+            <small class="text-muted fw-bold">AVG. CTS SCORE</small>
+            <h3 class="mb-0" id="stat-cts">0.000</h3>
+            <div class="small text-muted">Threshold: 0.850</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm p-3 border-start border-info border-4">
+            <small class="text-muted fw-bold">RCF LATENCY</small>
+            <h3 class="mb-0" id="stat-latency">0ms</h3>
+            <div class="small text-muted">Injection Speed</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+    <div class="card border-0 shadow-sm p-3 border-start border-danger border-4">
+        <small class="text-muted fw-bold">ICF RETRY RATE</small>
+        <h3 class="mb-0" id="stat-retry-rate">0.0%</h3>
+        <div class="small text-danger" id="retry-desc">Analyzing Feedback Loops...</div>
+    </div>
+</div>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-8">
+        <div class="card p-4 shadow-sm border-0">
+            <h6 class="fw-bold mb-3">Identity Stability vs. Environmental Drift</h6>
+            <div style="height: 350px;">
+                <canvas id="stabilityChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card p-4 shadow-sm border-0">
+            <h6 class="fw-bold mb-3">CTS Quality Distribution</h6>
+            <div style="height: 350px;">
+                <canvas id="qualityChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+    <div class="card p-4 shadow-sm border-0 h-100">
+        <h6 class="fw-bold mb-3 text-primary">
+            <i class="fas fa-bolt me-2"></i>IIA Injection Performance (ms)
+        </h6>
+        <div style="height: 300px;">
+            <canvas id="latencyChart"></canvas>
+        </div>
+        <p class="small text-muted mt-2">
+            Measures the latency of <strong>Identity Embedding</strong> injection per diffusion step. 
+            Target: < 250ms.
+        </p>
+    </div>
+</div>
+
+<div class="col-md-6">
+    <div class="card p-4 shadow-sm border-0 h-100">
+        <h6 class="fw-bold mb-3 text-info">
+            <i class="fas fa-microchip me-2"></i>Consist-Gen Algorithm Profile
+        </h6>
+        <div style="height: 300px;">
+            <canvas id="radarChart"></canvas>
+        </div>
+        <p class="small text-muted mt-2">
+            Multi-factor analysis of <strong>IIA</strong>, <strong>CTS</strong>, and <strong>ICF</strong> efficiency.
+        </p>
+    </div>
+</div>
+
+<script>
+    const apiData = {{ data | tojson }};
+    
+    // Update KPI Numbers from Data
+    const avgScores = (apiData.scores.reduce((a, b) => a + b, 0) / apiData.scores.length).toFixed(3);
+    const avgLatency = Math.round(apiData.latency.reduce((a, b) => a + b, 0) / apiData.latency.length);
+    document.getElementById('stat-cts').innerText = avgScores;
+    document.getElementById('stat-retention').innerText = (avgScores * 100).toFixed(1) + "%";
+    document.getElementById('stat-latency').innerText = avgLatency + "ms";
+
+    // Chart Options
+    const chartOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: 'bottom' } }
+    };
+
+    // 1. Stability Chart (Line)
+    new Chart(document.getElementById('stabilityChart'), {
+        type: 'line',
+        data: {
+            labels: apiData.labels.slice(-20),
+            datasets: [
+                {
+                    label: 'Identity Lock (IIA)',
+                    data: apiData.scores.slice(-20),
+                    borderColor: '#0d6efd',
+                    backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                    fill: true,
+                    tension: 0.3
+                },
+                {
+                    label: 'Background Drift (CX)',
+                    data: apiData.drift.slice(-20),
+                    borderColor: '#fd7e14',
+                    borderDash: [5, 5],
+                    tension: 0.3
+                }
+            ]
+        },
+        options: chartOptions
+    });
+
+    // 2. Quality Distribution (Doughnut)
+    new Chart(document.getElementById('qualityChart'), {
+        type: 'doughnut',
+        data: {
+            labels: ['High Consistency', 'Minor Drift', 'ICF Triggered'],
+            datasets: [{
+                data: [75, 18, 7],
+                backgroundColor: ['#198754', '#ffc107', '#dc3545'],
+                hoverOffset: 4
+            }]
+        },
+        options: chartOptions
+    });
+
+    new Chart(document.getElementById('latencyChart'), {
+        type: 'bar',
+        data: {
+            labels: apiData.labels.slice(-10),
+            datasets: [{
+                label: 'Injection Latency',
+                data: apiData.latency.slice(-10),
+                backgroundColor: 'rgba(111, 66, 193, 0.6)',
+                borderColor: '#6f42c1',
+                borderWidth: 1,
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: { beginAtZero: false, min: 100, title: { display: true, text: 'ms' } }
+            },
+            plugins: { legend: { display: false } }
+        }
+    });
+
+    // 4. Consist-Gen Algorithm Profile Radar
+    new Chart(document.getElementById('radarChart'), {
+        type: 'radar',
+        data: {
+            labels: [
+                'Identity Retention (IIA)', 
+                'Context Stability (CX)', 
+                'Mask Precision', 
+                'Style Adherence', 
+                'Feedback Efficiency (ICF)'
+            ],
+            datasets: [{
+                label: 'System Score',
+                data: [94, 87, 91, 85, 96], // Simulated from CTS analytics
+                fill: true,
+                backgroundColor: 'rgba(13, 202, 240, 0.2)',
+                borderColor: '#0dcaf0',
+                pointBackgroundColor: '#0dcaf0'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                r: { suggestedMin: 0, suggestedMax: 100, ticks: { display: false } }
+            }
+        }
+    });
+    // Calculate accurate ICF Retry Rate from the dataset
+const totalRecords = apiData.scores.length;
+const failCount = apiData.scores.filter(score => score < 0.85).length;
+const retryRate = ((failCount / totalRecords) * 100).toFixed(1);
+
+// Update KPI Display
+document.getElementById('stat-retry-rate').innerText = retryRate + "%";
+document.getElementById('retry-desc').innerText = failCount + " Adjustments Made";
+
+// Update the Doughnut Chart to reflect the actual Fail/Pass ratio
+new Chart(document.getElementById('qualityChart'), {
+    type: 'doughnut',
+    data: {
+        labels: ['Direct Pass (CTS > 0.85)', 'ICF Retry Required'],
+        datasets: [{
+            data: [totalRecords - failCount, failCount],
+            backgroundColor: ['#198754', '#dc3545'],
+            hoverOffset: 4
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { 
+            legend: { position: 'bottom' },
+            title: { display: true, text: 'Consistency Feedback Efficiency' }
+        }
+    }
+});
+</script>
+{% endblock %}
